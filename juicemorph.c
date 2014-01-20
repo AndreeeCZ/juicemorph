@@ -30,9 +30,6 @@
 #include <time.h>
 #include <math.h>
 
-
-LADSPA_Descriptor *LD = NULL;
-
 struct juicemorph_t {
 	LADSPA_Data *in;
 	LADSPA_Data *out;
@@ -41,6 +38,8 @@ struct juicemorph_t {
 	LADSPA_Data *ctl3;
 };
 
+// FIXME: these vars shouldn't be global
+//        try putting them in juicemorph_t
 LADSPA_Data buffer[50000*10];
 long bufferRecPos;
 long bufferPlayPos;
@@ -175,44 +174,42 @@ void juicemorph_cleanup(LADSPA_Handle handle) {
 }
 
 const LADSPA_Descriptor *ladspa_descriptor(unsigned long index) {
-	char **pn;
-	LADSPA_PortDescriptor *pd;
-	LADSPA_PortRangeHint *prh;
-
 	if(index!=0)
 		return NULL;
-	if(LD)
-		return LD;
 
-	LD = malloc(sizeof(LADSPA_Descriptor));
-	if(!LD)
-		return NULL;
+	static LADSPA_Descriptor LD;
+	static int needsInit = 1;
 
-	LD->UniqueID   = 4104;
-	LD->Label      = strdup("JuiceMorph");
-	LD->Properties = LADSPA_PROPERTY_HARD_RT_CAPABLE;
-	LD->Name       = strdup("JuiceMorph");
-	LD->Maker      = strdup("Andre Sklenar (andre.sklenar@gmail.com)");
-	LD->Copyright  = strdup("(C) Andre Sklenar 2014");
-	LD->PortCount  = 5;
+	if(needsInit == 0)
+		return &LD;
 
-	pd = malloc(sizeof(LADSPA_PortDescriptor)*LD->PortCount);
+	needsInit = 0;
+
+	LD.UniqueID   = 4104;
+	LD.Label      = "JuiceMorph";
+	LD.Properties = LADSPA_PROPERTY_HARD_RT_CAPABLE;
+	LD.Name       = "JuiceMorph";
+	LD.Maker      = "Andre Sklenar (andre.sklenar@gmail.com)";
+	LD.Copyright  = "(C) Andre Sklenar 2014";
+	LD.PortCount  = 5;
+
+	static LADSPA_PortDescriptor pd[5];
 	pd[0] = LADSPA_PORT_AUDIO   | LADSPA_PORT_INPUT;
 	pd[1] = LADSPA_PORT_AUDIO   | LADSPA_PORT_OUTPUT;
 	pd[2] = LADSPA_PORT_CONTROL | LADSPA_PORT_INPUT;
 	pd[3] = LADSPA_PORT_CONTROL | LADSPA_PORT_INPUT;
 	pd[4] = LADSPA_PORT_CONTROL | LADSPA_PORT_INPUT;
-	LD->PortDescriptors = pd;
+	LD.PortDescriptors = pd;
 
-	pn = malloc(sizeof(char*)*LD->PortCount);
-	pn[0] = strdup("Input");
-	pn[1] = strdup("Output");
-	pn[2] = strdup("Unpropability");
-	pn[3] = strdup("Chunk Size");
-	pn[4] = strdup("Record");
-	LD->PortNames = (const char **)pn;
+	static const char *pn[5];
+	pn[0] = "Input";
+	pn[1] = "Output";
+	pn[2] = "Unpropability";
+	pn[3] = "Chunk Size";
+	pn[4] = "Record";
+	LD.PortNames = pn;
 
-	prh = malloc(sizeof(LADSPA_PortRangeHint)*LD->PortCount);
+	static LADSPA_PortRangeHint prh[5];
 	prh[0].HintDescriptor  = 0;
 	prh[1].HintDescriptor  = 0;
 	prh[2].HintDescriptor  = LADSPA_HINT_BOUNDED_BELOW | LADSPA_HINT_BOUNDED_ABOVE | LADSPA_HINT_DEFAULT_MAXIMUM;
@@ -224,33 +221,23 @@ const LADSPA_Descriptor *ladspa_descriptor(unsigned long index) {
 	prh[4].HintDescriptor  = LADSPA_HINT_TOGGLED;
 	prh[4].LowerBound      = 0;
 	prh[4].UpperBound      = 1;
-	LD->PortRangeHints     = prh;
+	LD.PortRangeHints      = prh;
 
-	LD->instantiate         = juicemorph_instantiate;
-	LD->activate            = juicemorph_activate;
-	LD->connect_port        = juicemorph_connectport;
-	LD->run                 = juicemorph_run;
-	LD->cleanup             = juicemorph_cleanup;
-	LD->run_adding          = NULL;
-	LD->set_run_adding_gain = NULL;
-	LD->deactivate          = NULL;
-	return LD;
-}
+	LD.instantiate         = juicemorph_instantiate;
+	LD.activate            = juicemorph_activate;
+	LD.connect_port        = juicemorph_connectport;
+	LD.run                 = juicemorph_run;
+	LD.cleanup             = juicemorph_cleanup;
+	LD.run_adding          = NULL;
+	LD.set_run_adding_gain = NULL;
+	LD.deactivate          = NULL;
 
-
-void init() {
-
+	// this was on init()
+	// it should be placed in the juicemorph_t struct
 	bufferRecPos = 0;
 	bufferPlayPos = 0;
 	bufferLength = 0;
-
 	srand((unsigned int)time(NULL));
-}
 
-void _fini() {
-	if(LD) {
-		free(LD);
-		LD = NULL;
-	}
+	return &LD;
 }
-
