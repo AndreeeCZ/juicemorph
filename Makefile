@@ -5,8 +5,8 @@ juicemorph.so: juicemorph.c
 	ld -shared -o juicemorph.so juicemorph.o
 
 install:
-	cp juicemorph.so /usr/lib/ladspa
-	chmod 644 /usr/lib/ladspa/juicemorph.so
+	install -d $(DESTDIR)/usr/lib/ladspa
+	install -m 644 juicemorph.so $(DESTDIR)/usr/lib/ladspa
 
 clean:
 	rm *.o *.so
