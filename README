@@ -1,0 +1,24 @@
+JuiceMorph ladspa effect plugin
+============================
+
+OVERVIEW
+
+My first real shot for a usable and final, yet very simple ladspa plugin.
+
+It lets you record a short loop and then loop it. After each loop, based on propability,
+some of the chunks get switched and some of them reversed.
+
+
+
+COMPILATION/INSTALLATION;
+
+
+typing make should build it if you have the LADSPA SDK installed.
+
+
+"make install" will copy the .so to /usr/lib/ladspa
+
+
+CONTACT
+
+Mail me at andre.sklenar@gmail.com - please put juicemorph in the subject.
