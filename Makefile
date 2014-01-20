@@ -1,7 +1,7 @@
 all:juicemorph.so
 
 juicemorph.so: juicemorph.c
-	gcc -Wall -fPIC -dPIC -c -o juicemorph.o juicemorph.c
+	gcc -Wall -fPIC -DPIC -c -o juicemorph.o juicemorph.c
 	ld -shared -o juicemorph.so juicemorph.o
 
 install:
